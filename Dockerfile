@@ -16,13 +16,14 @@ WORKDIR /var/www/html
 
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --prefer-dist
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-scripts
 
 # Copy rest
 COPY . .
 
-# Build frontend
-RUN npm install \
+# Finish composer post-install steps now that artisan exists, then build frontend
+RUN composer run-script post-autoload-dump \
+    && npm install \
     && npm run build \
     && php artisan config:clear
 
