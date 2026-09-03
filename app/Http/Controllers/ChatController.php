@@ -95,8 +95,10 @@ class ChatController extends Controller
 
         $message->load('sender.profile');
 
-        // Broadcast the message to other participants
-        broadcast(new MessageSent($message))->toOthers();
+        // Broadcast the message to other participants if configured
+        try {
+            broadcast(new MessageSent($message))->toOthers();
+        } catch (\Exception $e) {}
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -193,7 +195,9 @@ class ChatController extends Controller
             'offer' => $validated['offer'],
         ]);
 
-        broadcast(new CallInitiated($call, $validated['offer'], $validated['type']))->toOthers();
+        try {
+            broadcast(new CallInitiated($call, $validated['offer'], $validated['type']))->toOthers();
+        } catch (\Exception $e) {}
 
         return response()->json([
             'success' => true,
@@ -218,7 +222,9 @@ class ChatController extends Controller
             'answer' => $validated['answer'],
         ]);
 
-        broadcast(new CallAnswered($call, $validated['answer']))->toOthers();
+        try {
+            broadcast(new CallAnswered($call, $validated['answer']))->toOthers();
+        } catch (\Exception $e) {}
 
         return response()->json(['success' => true]);
     }
@@ -290,7 +296,9 @@ class ChatController extends Controller
             'ended_at' => now(),
         ]);
 
-        broadcast(new CallDeclined($call))->toOthers();
+        try {
+            broadcast(new CallDeclined($call))->toOthers();
+        } catch (\Exception $e) {}
 
         // Create call log message
         Message::create([
@@ -323,7 +331,9 @@ class ChatController extends Controller
             'duration' => $duration,
         ]);
 
-        broadcast(new CallEnded($call))->toOthers();
+        try {
+            broadcast(new CallEnded($call))->toOthers();
+        } catch (\Exception $e) {}
 
         // Create call log message
         $status = $call->status === 'answered' ? 'ended' : 'missed';
@@ -352,7 +362,9 @@ class ChatController extends Controller
             'candidate' => 'required|array',
         ]);
 
-        broadcast(new CallICECandidate($call, $validated['candidate'], $user->id))->toOthers();
+        try {
+            broadcast(new CallICECandidate($call, $validated['candidate'], $user->id))->toOthers();
+        } catch (\Exception $e) {}
 
         return response()->json(['success' => true]);
     }
@@ -368,7 +380,9 @@ class ChatController extends Controller
             'offer' => 'required|array',
         ]);
 
-        broadcast(new CallNegotiation($call, $validated['offer'], $user->id))->toOthers();
+        try {
+            broadcast(new CallNegotiation($call, $validated['offer'], $user->id))->toOthers();
+        } catch (\Exception $e) {}
 
         return response()->json(['success' => true]);
     }
