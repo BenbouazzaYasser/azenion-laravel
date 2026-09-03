@@ -15,10 +15,13 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install PHP deps first (cache layer)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # Copy rest of app
 COPY . .
+
+# Run post-install scripts now that artisan exists
+RUN composer run-script post-autoload-dump --no-interaction
 
 # Build frontend + cache
 RUN npm install --ignore-scripts \
