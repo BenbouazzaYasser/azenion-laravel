@@ -5,13 +5,16 @@ import Pusher from 'pusher-js';
 window.Alpine = Alpine;
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY,
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-    forceTLS: true,
-    encrypted: true,
-});
+const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+if (pusherKey) {
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: pusherKey,
+        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
+        forceTLS: true,
+        encrypted: true,
+    });
+}
 
 document.addEventListener('alpine:init', () => {
     // chatApp will be registered from Blade if needed
