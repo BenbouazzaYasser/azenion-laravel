@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
     nodejs npm sqlite3 libsqlite3-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pdo_sqlite mbstring exif pcntl bcmath gd zip \
-    && a2dismod mpm_event mpm_worker mpm_prefork 2>/dev/null; a2enmod mpm_prefork \
+    && (a2dismod mpm_event mpm_worker mpm_prefork 2>/dev/null || true) \
+    && a2enmod mpm_prefork \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
