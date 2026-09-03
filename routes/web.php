@@ -92,6 +92,7 @@ Route::middleware('auth')->group(function () {
     // Chat
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::get('/chat/{conversation}', [ChatController::class, 'show'])->name('chat.show');
+    Route::get('/chat/{conversation}/poll', [ChatController::class, 'poll'])->name('chat.poll');
     Route::post('/chat/{conversation}/messages', [ChatController::class, 'store'])->name('chat.messages.store');
     Route::post('/chat/{conversation}/voice', [ChatController::class, 'storeVoice'])->name('chat.messages.voice');
     Route::post('/chat/start', [ChatController::class, 'start'])->name('chat.start');

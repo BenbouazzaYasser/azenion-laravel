@@ -105,23 +105,62 @@
                                 callState: { active: false, isIncoming: false, type: 'voice', connected: false, callId: null, callerId: null },
                                 peerConnection: null, localStream: null, remoteStream: null, isMuted: false, isVideoOff: false, isScreenSharing: false, screenShareTrack: null,
                                 otherUserName: @js($otherUser->profile->full_name ?? $otherUser->name),
-                                async init() {
-                                    if (window.Echo) {
-                                        window.Echo.private('conversation.' + conversationId)
-                                            .listen('MessageSent', (e) => {
-                                                if (e.sender_id !== currentUserId) {
-                                                    this.messages.push({ id: e.id, content: e.content, type: e.type || 'text', audio_url: e.audio_url, duration: e.duration, call_data: e.call_data, sender_name: e.sender_name, sender_id: e.sender_id, is_me: false });
-                                                    this.scrollToBottom();
-                                                }
-                                            })
-                                            .listen('CallInitiated', (e) => { if (e.receiver_id === currentUserId) this.handleIncomingCall(e); })
-                                            .listen('CallAnswered', (e) => this.handleCallAnswered(e))
-                                            .listen('CallDeclined', (e) => this.handleCallDeclined(e))
-                                            .listen('CallEnded', (e) => this.handleCallEnded(e))
-                                            .listen('CallICECandidate', (e) => { if (e.from_user_id !== currentUserId) this.handleICECandidate(e); })
-                                            .listen('CallNegotiation', (e) => { if (e.from_user_id !== currentUserId) this.handleNegotiation(e); });
-                                    }
-                                },
+                                 async init() {
+                                     // Poll every 2.5 seconds for new messages and incoming calls
+                                     setInterval(async () => {
+                                         try {
+                                             const lastMsg = this.messages[this.messages.length - 1];
+                                             const lastId = lastMsg ? lastMsg.id : 0;
+                                             const activeCallId = this.callState.callId || '';
+                                             const res = await fetch(`{{ route('chat.poll', $conversation->id) }}?last_message_id=${lastId}&active_call_id=${activeCallId}`, { headers: { 'Accept': 'application/json' } });
+                                             const data = await res.json();
+                                             
+                                             if (data.messages && data.messages.length > 0) {
+                                                 data.messages.forEach(m => {
+                                                     if (!this.messages.some(existing => existing.id === m.id)) {
+                                                         this.messages.push(m);
+                                                         this.scrollToBottom();
+                                                     }
+                                                 });
+                                             }
+
+                                             if (data.ringing_call && !this.callState.active) {
+                                                 this.handleIncomingCall({
+                                                     call_id: data.ringing_call.call_id,
+                                                     caller_id: data.ringing_call.caller_id,
+                                                     type: data.ringing_call.type,
+                                                     offer: data.ringing_call.offer
+                                                 });
+                                             }
+
+                                             if (data.call_status && this.callState.active) {
+                                                 if (data.call_status.status === 'answered' && !this.callState.connected && data.call_status.answer) {
+                                                     this.handleCallAnswered({ answer: data.call_status.answer });
+                                                 } else if (['declined', 'ended'].includes(data.call_status.status)) {
+                                                     this.endCallLocal();
+                                                 }
+                                             }
+                                         } catch (err) {
+                                             // silent poll error
+                                         }
+                                     }, 2500);
+
+                                     if (window.Echo) {
+                                         window.Echo.private('conversation.' + conversationId)
+                                             .listen('MessageSent', (e) => {
+                                                 if (e.sender_id !== currentUserId) {
+                                                     this.messages.push({ id: e.id, content: e.content, type: e.type || 'text', audio_url: e.audio_url, duration: e.duration, call_data: e.call_data, sender_name: e.sender_name, sender_id: e.sender_id, is_me: false });
+                                                     this.scrollToBottom();
+                                                 }
+                                             })
+                                             .listen('CallInitiated', (e) => { if (e.receiver_id === currentUserId) this.handleIncomingCall(e); })
+                                             .listen('CallAnswered', (e) => this.handleCallAnswered(e))
+                                             .listen('CallDeclined', (e) => this.handleCallDeclined(e))
+                                             .listen('CallEnded', (e) => this.handleCallEnded(e))
+                                             .listen('CallICECandidate', (e) => { if (e.from_user_id !== currentUserId) this.handleICECandidate(e); })
+                                             .listen('CallNegotiation', (e) => { if (e.from_user_id !== currentUserId) this.handleNegotiation(e); });
+                                     }
+                                 },
                                 sendMessage() {
                                     if (!this.newMessage.trim()) return;
                                     fetch(storeMessageRoute, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ content: this.newMessage }) })

@@ -190,6 +190,7 @@ class ChatController extends Controller
             'receiver_id' => $receiverId,
             'type' => $validated['type'],
             'status' => 'ringing',
+            'offer' => $validated['offer'],
         ]);
 
         broadcast(new CallInitiated($call, $validated['offer'], $validated['type']))->toOthers();
@@ -214,11 +215,67 @@ class ChatController extends Controller
         $call->update([
             'status' => 'answered',
             'started_at' => now(),
+            'answer' => $validated['answer'],
         ]);
 
         broadcast(new CallAnswered($call, $validated['answer']))->toOthers();
 
         return response()->json(['success' => true]);
+    }
+
+    public function poll(Request $request, Conversation $conversation)
+    {
+        $user = auth()->user();
+        if (! $conversation->users()->where('user_id', $user->id)->exists()) {
+            abort(403);
+        }
+
+        $lastMessageId = $request->input('last_message_id', 0);
+        $newMessages = $conversation->messages()
+            ->where('id', '>', $lastMessageId)
+            ->with('sender.profile')
+            ->get()
+            ->map(fn ($m) => [
+                'id' => $m->id,
+                'content' => $m->content,
+                'type' => $m->type ?? 'text',
+                'audio_url' => $m->audio_url ?? null,
+                'duration' => $m->duration ?? null,
+                'call_data' => $m->call_data ?? null,
+                'sender_name' => $m->sender->profile->full_name ?? $m->sender->name,
+                'sender_id' => $m->sender_id,
+                'is_me' => $m->sender_id === $user->id,
+            ]);
+
+        $ringingCall = Call::where('conversation_id', $conversation->id)
+            ->where('receiver_id', $user->id)
+            ->where('status', 'ringing')
+            ->latest()
+            ->first();
+
+        $activeCallId = $request->input('active_call_id');
+        $callStatus = null;
+        if ($activeCallId) {
+            $trackedCall = Call::find($activeCallId);
+            if ($trackedCall) {
+                $callStatus = [
+                    'id' => $trackedCall->id,
+                    'status' => $trackedCall->status,
+                    'answer' => $trackedCall->answer,
+                ];
+            }
+        }
+
+        return response()->json([
+            'messages' => $newMessages,
+            'ringing_call' => $ringingCall ? [
+                'call_id' => $ringingCall->id,
+                'caller_id' => $ringingCall->caller_id,
+                'type' => $ringingCall->type,
+                'offer' => $ringingCall->offer,
+            ] : null,
+            'call_status' => $callStatus,
+        ]);
     }
 
     public function declineCall(Request $request, Call $call)
