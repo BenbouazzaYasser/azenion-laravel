@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: azenion-platform
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: azenion-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: azenion-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: azenion-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: azenion-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: azenion-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: BROADCAST_CONNECTION
+        value: pusher
+      - key: PUSHER_APP_ID
+        sync: false
+      - key: PUSHER_APP_KEY
+        sync: false
+      - key: PUSHER_APP_SECRET
+        sync: false
+      - key: PUSHER_APP_CLUSTER
+        sync: false
+      - key: VITE_PUSHER_APP_KEY
+        sync: false
+      - key: VITE_PUSHER_APP_CLUSTER
+        sync: false
+      - key: FILESYSTEM_DISK
+        value: local
+
+databases:
+  - name: azenion-db
+    plan: starter
+    databaseName: azenion
+    user: azenion

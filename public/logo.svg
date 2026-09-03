@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Symmetric, scalable infinity logo mark. -->
+
+<svg
+   viewBox="0 0 512 512"
+   role="img"
+   aria-labelledby="title"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="infinity-logo.svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <title
+     id="title">Infinity symbol</title>
+  <path
+     d="M96 256C96 170 192 170 256 256C320 342 416 342 416 256C416 170 320 170 256 256C192 342 96 342 96 256Z"
+     fill="none"
+     stroke="#000000"
+     stroke-width="32"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path1"
+     style="fill:none;fill-opacity:1;stroke:#2828ff;stroke-opacity:1" />
+</svg>
