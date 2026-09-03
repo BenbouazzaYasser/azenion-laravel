@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
     nodejs npm sqlite3 libsqlite3-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pdo_sqlite mbstring exif pcntl bcmath gd zip \
+    && a2dismod mpm_event mpm_worker 2>/dev/null; a2enmod mpm_prefork \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,14 +16,13 @@ WORKDIR /var/www/html
 
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
 # Copy rest
 COPY . .
 
-# Install PHP deps + build frontend
-RUN composer install --no-dev --optimize-autoloader \
-    && npm install \
+# Build frontend
+RUN npm install \
     && npm run build \
     && php artisan config:clear
 
